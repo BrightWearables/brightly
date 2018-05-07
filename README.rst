@@ -13,9 +13,9 @@ Introduction
     :target: https://travis-ci.org/geekmomprojects/brightly_CircuitPython_brightly
     :alt: Build Status
 
-**Brightly** is a library based Adafruit's `CircuitPython<https://github.com/adafruit/circuitpython>`_ Python implementation with
+**Brightly** is a library based Adafruit's `CircuitPython <https://github.com/adafruit/circuitpython>`_ Python implementation with
 functions to generate simple LED patterns and animations. It is designed to work with the
-`Brightly Code Generator`<http://BrightWearables.com/brightly/index.html>`_ to create an easy to use
+`Brightly Code Generator <http://BrightWearables.com/brightly/index.html>`_ to create an easy to use
 drag-and-drop coding interface for Neopixels on CircuitPython capable boards.
 
 Dependencies
@@ -24,12 +24,11 @@ This library depends on:
 
 * `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
 
-* `Adafruit CircuitPython NeoPixel <https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel/releases>`
+* `Adafruit CircuitPython NeoPixel <https://github.com/adafruit/Adafruit\_CircuitPython_NeoPixel/releases>`_
 
 
 Please ensure all dependencies are available on the CircuitPython filesystem.
-This is easily achieved by downloading
-`the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
+This is easily achieved by downloading `the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit\_CircuitPython_Bundle>`_
 
 Usage Example
 =============
