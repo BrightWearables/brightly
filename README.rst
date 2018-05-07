@@ -13,13 +13,19 @@ Introduction
     :target: https://travis-ci.org/geekmomprojects/brightly_CircuitPython_brightly
     :alt: Build Status
 
-.. todo:: Describe what the library does.
+**Brightly** is a library based Adafruit's `CircuitPython<https://github.com/adafruit/circuitpython>`_ Python implementation with
+functions to generate simple LED patterns and animations. It is designed to work with the
+`Brightly Code Generator`<http://BrightWearables.com/brightly/index.html>`_ to create an easy to use
+drag-and-drop coding interface for Neopixels on CircuitPython capable boards.
 
 Dependencies
 =============
-This driver depends on:
+This library depends on:
 
 * `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
+
+* `Adafruit CircuitPython NeoPixel <https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel/releases>`
+
 
 Please ensure all dependencies are available on the CircuitPython filesystem.
 This is easily achieved by downloading
@@ -27,62 +33,10 @@ This is easily achieved by downloading
 
 Usage Example
 =============
-
-.. todo:: Add a quick, simple example. It and other examples should live in the examples folder and be included in docs/examples.rst.
+See examples/main.py
 
 Contributing
 ============
-
-Contributions are welcome! Please read our `Code of Conduct
-<https://github.com/geekmomprojects/brightly_CircuitPython_brightly/blob/master/CODE_OF_CONDUCT.md>`_
+Contributions are welcome! Please read the `Code of Conduct
+<https://github.com/brightwearables/brightly/CODE_OF_CONDUCT.md>`_
 before contributing to help this project stay welcoming.
-
-Building locally
-================
-
-Zip release files
------------------
-
-To build this library locally you'll need to install the
-`circuitpython-build-tools <https://github.com/adafruit/circuitpython-build-tools>`_ package.
-
-.. code-block:: shell
-
-    python3 -m venv .env
-    source .env/bin/activate
-    pip install circuitpython-build-tools
-
-Once installed, make sure you are in the virtual environment:
-
-.. code-block:: shell
-
-    source .env/bin/activate
-
-Then run the build:
-
-.. code-block:: shell
-
-    circuitpython-build-bundles --filename_prefix brightly-circuitpython-brightly --library_location .
-
-Sphinx documentation
------------------------
-
-Sphinx is used to build the documentation based on rST files and comments in the code. First,
-install dependencies (feel free to reuse the virtual environment from above):
-
-.. code-block:: shell
-
-    python3 -m venv .env
-    source .env/bin/activate
-    pip install Sphinx sphinx-rtd-theme
-
-Now, once you have the virtual environment activated:
-
-.. code-block:: shell
-
-    cd docs
-    sphinx-build -E -W -b html . _build/html
-
-This will output the documentation to ``docs/_build/html``. Open the index.html in your browser to
-view them. It will also (due to -W) error out on any warning like Travis will. This is a good way to
-locally verify it will pass.

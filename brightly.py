@@ -14,8 +14,28 @@ class Brightly:
 	def __init__(self, strip, numpix):
 		self.strip = strip
 		self.numpix = numpix
+		self.buf_i = bytearray(self.numpix*3)    #Working buffers for RGB tuples
+		self.buf_f = bytearray(self.numpix*3)
 		random.seed(int(time.monotonic()*1000))
-
+		
+	def __read_buf_tuple__(self, buf, index):
+		offset = index*3;
+		return (buf[offset], buf[offset+1], buf[offset+2])
+		
+	def __write_buf_tuple__(self, buf, index, tup):
+		offset = index*3;
+		buf[offset] = tup[0]
+		buf[offset+1] = tup[1]
+		buf[offset+2] = tup[2]
+		
+	def __set_strip_from_buf__(self, buf):
+		for i in range(numpix):
+			self.strip[i] = self.__read_buf_tuple__(buf, i)
+			
+	def __set_buf_from_strip__(self, buf):
+		for i in range(self.numpix):
+			self.__write_buf_tuple__(buf, i, self.strip[i])
+			
 	def __is_color__(self, item):
 		return (type(item) is tuple)
 	  
@@ -26,7 +46,7 @@ class Brightly:
 		self.strip.fill((0,0,0))
 		self.strip.show()
 		
-	#returns RGB value from color __wheel__ position 0 - 255
+	#returns RGB value from color __wheel__ position 0 - 255. From adafruit neopxiel example
 	def __wheel__(self, pos): 
 		if (pos < 0 or pos > 255):
 			return (0,0,0)
@@ -38,35 +58,36 @@ class Brightly:
 		else:
 			pos -= 170
 			return (int(pos*3),0, int(255 - pos*3))
+	
+	def __wheel_degrees__(self, deg):
+		return self.__wheel__(int(deg*256/360))
 
 	def random_color(self):
 		return(self.__wheel__(random.randint(0,255)))
 		
 	def rotate_pix(self, npos):
-		arr_i = [(0,0,0)]*self.numpix
+		set_buf_from_strip(self.buf_i)
 		for i in range(self.numpix):
-			arr_i[i] = self.strip[i]
-		for i in range(self.numpix):
-			self.strip[(i + npos) % self.numpix] = arr_i[i]
+			self.strip[(i + npos) % self.numpix] = read_buf_tuple(self.buf_i, i)
 		self.strip.show()
 
 	def set_one_pixel(self, index, col, show):
 		if(index < self.numpix):
 			if (self.__is_number__(col)):
-				col = self.__wheel__(col*256/360)
+				col = self.__wheel_degrees__(col)
 			self.strip[index] = col
 		if show:
 			self.strip.show()
 
 	def set_pixels(self, pixcols):
 		if self.__is_number__(pixcols):
-			pixcols = self.__wheel__(pixcols*256/360)
+			pixcols = self.__wheel_degrees__(pixcols)
 		if self.__is_color__(pixcols):
 			self.strip.fill(pixcols)
 		else:
 			for i in range(min(len(pixcols), self.numpix)):
 				if (self.__is_number__(pixcols[i])):
-					self.strip[i] = self.__wheel__(int(pixcols[i]*256/360))
+					self.strip[i] = self.__wheel_degrees__(pixcols[i])
 				else:
 					self.strip[i] = pixcols[i]
 		self.strip.show()
@@ -95,47 +116,40 @@ class Brightly:
 	def __interp_tuple__(self, t1, t2, cur, nstep):
 		return(self.__interp_val__(t1[0], t2[0], cur, nstep), self.__interp_val__(t1[1], t2[1], cur, nstep), self.__interp_val__(t1[2], t2[2], cur, nstep))
 
-	#assumes start/end are both arrays of tuples with self.numpix elements - holding color values
+	#start/end are both bytearray buffers holding RGB values
 	def __smooth_transition__(self, start, end, wait=0, nstep=8):
-		single_color = self.__is_color__(end)
 		for i in range(nstep):
 			for j in range(self.numpix):
-				if single_color:
-					self.strip[j] = self.__interp_tuple__(start[j], end, i+1, nstep)
-				else:
-					self.strip[j] = self.__interp_tuple__(start[j], end[j], i+1, nstep)
+				self.strip[j] = self.__interp_tuple__(self.__read_buf_tuple__(start, j), self.__read_buf_tuple__(end, j), i, nstep)
 			self.strip.show()
 			if wait:
 				time.sleep(wait)
 			
 	def smooth_change_to(self, pixcols, wait=0, nstep=8):
-		arr_i = [(0,0,0)]*self.numpix
-		arr_f = [(0,0,0)]*self.numpix
-
+		self.__set_buf_from_strip__(self.buf_i)
+	
 		if self.__is_number__(pixcols):
-			pixcols = self.__wheel__(int(pixcols*256/360))
-		
+			pixcols = self.__wheel_degrees__(pixcols)
+					
 		if self.__is_color__(pixcols):
 			for i in range(self.numpix):
-				arr_i[i] = self.strip[i]
-				arr_f[i] = pixcols
+				self.__write_buf_tuple__(self.buf_f, i, pixcols)
 		else:
 			for i in range(min(len(pixcols), self.numpix)):
-				arr_i[i] = self.strip[i]
 				if self.__is_number__(pixcols[i]):
-					arr_f[i] = self.__wheel__(int(pixcols[i]*256/360))
+					self.__write_buf_tuple__(self.buf_f, i, self.__wheel_degrees__(pixcols[i]))
 				else:
-					arr_f[i] = pixcols[i]
-		self.__smooth_transition__(arr_i, arr_f, wait, nstep)
+					self.__write_buf_tuple__(self.buf_f, i, pixcols[i])
+					
+		self.__smooth_transition__(self.buf_i, self.buf_f, wait, nstep)
 		
 	def smooth_rotate_pix(self, npos, wait=0, nstep=8):
-		arr_i = [(0,0,0)]*self.numpix
-		arr_f = [(0,0,0)]*self.numpix
+		self.__set_buf_from_strip__(self.buf_i)
 
 		for i in range(self.numpix):
-			arr_i[i] = self.strip[i]
-			arr_f[i] = self.strip[(i + npos) % self.numpix]
-		self.__smooth_transition__(arr_i, arr_f, wait, nstep)
+			self.__write_buf_tuple__(self.buf_f, i, self.strip[(i + npos) % self.numpix])
+
+		self.__smooth_transition__(self.buf_i, self.buf_f, wait, nstep)
 		
 	def twinkle(self, nleds, cols, duration):
 		nsteps = 10   #must be even
@@ -177,7 +191,7 @@ class Brightly:
 		last = self.numpix
 		inc = 1
 		if (self.__is_number__(cols)):
-			cols = self.__wheel__(int(cols*255/360))
+			cols = self.__wheel_degrees__(cols)
 		single_color = self.__is_color__(cols)
 		col = (0,0,0)
 		if single_color:
