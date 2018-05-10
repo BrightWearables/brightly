@@ -9,13 +9,18 @@ import time
 import random
 import neopixel
 
+"""
+Class to perforn color and animation operations on a strip of Neopixels. 
+The functions match those available on the Brightly code generator: 
+http:\\www.BrightWearaables.com\brightly\index.html
+"""
 class Brightly:
 
 	def __init__(self, strip, numpix):
 		self.strip = strip
 		self.numpix = numpix
 		self.buf_i = bytearray(self.numpix*3)    #Working buffers for RGB tuples
-		self.buf_f = bytearray(self.numpix*3)
+		self.buf_f = bytearray(self.numpix*3)    #for functions requiring buffers
 		random.seed(int(time.monotonic()*1000))
 		
 	def __read_buf_tuple__(self, buf, index):
@@ -46,7 +51,8 @@ class Brightly:
 		self.strip.fill((0,0,0))
 		self.strip.show()
 		
-	#returns RGB value from color __wheel__ position 0 - 255. From adafruit neopxiel example
+	#returns RGB value from color __wheel__ position 0 - 255. 
+	# From adafruit neopxiel CircuitPython sample code
 	def __wheel__(self, pos): 
 		if (pos < 0 or pos > 255):
 			return (0,0,0)
@@ -59,16 +65,18 @@ class Brightly:
 			pos -= 170
 			return (int(pos*3),0, int(255 - pos*3))
 	
+	#Brightly uses a 360 degree wheel, so convert to 
 	def __wheel_degrees__(self, deg):
 		return self.__wheel__(int(deg*256/360))
 
 	def random_color(self):
 		return(self.__wheel__(random.randint(0,255)))
 		
+	#rotates the pixels in the strip - wraps ends
 	def rotate_pix(self, npos):
-		set_buf_from_strip(self.buf_i)
+		self.__set_buf_from_strip__(self.buf_i)
 		for i in range(self.numpix):
-			self.strip[(i + npos) % self.numpix] = read_buf_tuple(self.buf_i, i)
+			self.strip[(i + npos) % self.numpix] = self.__read_buf_tuple__(self.buf_i, i)
 		self.strip.show()
 
 	def set_one_pixel(self, index, col, show):
@@ -108,23 +116,42 @@ class Brightly:
 		else:
 			self.__clear_pix__()
 		if(doWrite):
-			self.strip.show()	
+			self.strip.show()
 			
+	#interpolation functions for use with incremental color change		
 	def __interp_val__(self, first, last, cur, nstep):
-		return round(first + (last - first) * cur/nstep)
+		return first + (last - first) * cur/nstep
 
 	def __interp_tuple__(self, t1, t2, cur, nstep):
-		return(self.__interp_val__(t1[0], t2[0], cur, nstep), self.__interp_val__(t1[1], t2[1], cur, nstep), self.__interp_val__(t1[2], t2[2], cur, nstep))
+		return tuple(int(round(self.__interp_val__(t1[i], t2[i], cur, nstep))) for i in range(len(t1)))
 
 	#start/end are both bytearray buffers holding RGB values
 	def __smooth_transition__(self, start, end, wait=0, nstep=8):
-		for i in range(nstep):
+		for i in range(nstep+1):
 			for j in range(self.numpix):
 				self.strip[j] = self.__interp_tuple__(self.__read_buf_tuple__(start, j), self.__read_buf_tuple__(end, j), i, nstep)
 			self.strip.show()
 			if wait:
 				time.sleep(wait)
+				
+	#returns a pattern of repeating colors created from the array cols
+	def repeat_pattern(self, cols):
+		led_pattern = [(0,0,0)]*self.numpix
+		j = 0;
+		for i in range(self.numpix):
+			if self.__is_color__(cols[j]):
+				led_pattern[i] = cols[j]
+			elif self.__is_number__(cols[j]):
+				led_pattern[i] = self.__wheel__(cols[j])
+			j = (j + 1) % len(cols)
+		return led_pattern
+					
+	#returns list of RGB tuples
+	def rainbow(self, start, end):
+		inc = (end-start)/self.numpix
+		return [self.__wheel_degrees__(int(round(start + i*inc))) for i in range(self.numpix)]
 			
+	#interpolates nsteps when changing between colors			
 	def smooth_change_to(self, pixcols, wait=0, nstep=8):
 		self.__set_buf_from_strip__(self.buf_i)
 	
@@ -152,13 +179,13 @@ class Brightly:
 		self.__smooth_transition__(self.buf_i, self.buf_f, wait, nstep)
 		
 	def twinkle(self, nleds, cols, duration):
-		nsteps = 10   #must be even
+		nsteps = 10   # number of brightness steps in a pixel's lifetime. must be even.
 		self.strip.fill((0,0,0))
 		leds = {}
 		for i in range(0,nleds):
 			j = random.randint(0,self.numpix-1)
 			k = random.randint(0,len(cols)-1)
-			while j in leds:
+			while j in leds:					#pick an unlit LED
 				j = random.randint(0,self.numpix-1)
 			leds[j] = [k, int(i*nsteps/nleds)]
 		
@@ -170,7 +197,7 @@ class Brightly:
 					self.set_one_pixel(k, (0,0,0), False)
 					j = random.randint(0,self.numpix-1)
 					i = random.randint(0,len(cols)-1)
-					while j in leds:
+					while j in leds:            #pick an unlit LED
 						j = random.randint(0,self.numpix-1)
 					leds[j] = [i, 0]
 				else:
@@ -186,6 +213,7 @@ class Brightly:
 			self.strip.show()
 			time.sleep(0.02)
 
+    #"wipes" a color or pattern from one side of strip to the other			
 	def wipe(self, wait, dir, cols):
 		first = 0
 		last = self.numpix
@@ -206,7 +234,8 @@ class Brightly:
 			self.strip[j] = col
 			self.strip.show()
 			time.sleep(wait)
-			
+
+	#TBD - make this function more efficient. Works ok for now though.
 	def scroll_morse(self, str, col, DIR=1, delay=0.1):
 		MORSE = [".-","-...","-.-.","-..",".","..-.","--.","....","..",".---","-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-","..-","...-",".--","-..-","-.--","--..","-----",".----","..---","...--","....-",".....","-....","--...","---..","----."]
 		FIRST = 0
@@ -217,7 +246,7 @@ class Brightly:
 		length = len(str)
 		binStr = ""
 		newWord = False
-		for i in range(length):
+		for i in range(length): #deconstruct one letter at a time
 			ch = str[i]   
 			chStr = ""
 			if (ch <= '9' and ch >= '0'):
@@ -248,7 +277,7 @@ class Brightly:
 				next_led = col
 			self.shift_pix(DIR, False)
 			self.strip[FIRST] = next_led
-			self.strip.write()
+			self.strip.show()
 			time.sleep(delay)
 		
 		for i in range(self.numpix-1):
