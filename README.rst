@@ -26,6 +26,7 @@ This library depends on:
 
 * `Adafruit CircuitPython NeoPixel <https://github.com/adafruit/Adafruit\_CircuitPython_NeoPixel/releases>`_
 
+The current brightly.mpy library is compatible with CircuitPython 2.2.3
 
 Please ensure all dependencies are available on the CircuitPython filesystem.
 This is easily achieved by downloading `the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit\_CircuitPython_Bundle>`_
