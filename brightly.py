@@ -234,7 +234,48 @@ class Brightly:
 			self.strip[j] = col
 			self.strip.show()
 			time.sleep(wait)
-
+	
+	#scans a group of 3 pixels back and forth across "len" leds for duration seconds
+	def scan(self, col, len, wait, duration):
+		dir = 1
+		pos = 1
+		longpos = 1
+		prev = pos - dir
+		next = (pos + dir) % self.numpix
+		if (self.__is_number__(col)):
+			col = self.__wheel_degrees__(col)
+		start = time.monotonic()
+		while (time.monotonic() -   start < duration):
+			self.strip[prev] = (0,0,0)
+			self.strip[next] = (0,0,0)
+			if (longpos == 0 and dir == -1):
+				dir = 1
+			elif (longpos == len-1 and dir == 1):
+				dir = -1
+			pos = (pos + dir) % self.numpix
+			prev = (prev + dir) % self.numpix
+			next = (next + dir) % self.numpix
+			longpos = (longpos + dir) % len
+			self.strip[pos] = col
+			self.strip[prev] = [col[0] >> 1, col[1] >> 1, col[2] >> 2]
+			self.strip[next] = self.strip[prev]
+			self.strip.show()
+			time.sleep(wait)
+		
+	#theater chase effect
+	def theater_chase(self, col, wait, duration):
+		start = time.monotonic()
+		while (time.monotonic() - start < duration):
+			for i in range(3):
+				for j in range (0, self.numpix-2, 3):
+					self.strip[i+j] = col
+				self.strip.show()
+				time.sleep(wait)
+				for j in range (0, self.numpix-2, 3):
+					self.strip[i+j] = [0,0,0]
+			
+					
+			
 	#TBD - make this function more efficient. Works ok for now though.
 	def scroll_morse(self, str, col, DIR=1, delay=0.1):
 		MORSE = [".-","-...","-.-.","-..",".","..-.","--.","....","..",".---","-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-","..-","...-",".--","-..-","-.--","--..","-----",".----","..---","...--","....-",".....","-....","--...","---..","----."]
